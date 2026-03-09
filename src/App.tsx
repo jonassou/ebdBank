@@ -31,7 +31,9 @@ import {
   Gamepad2,
   Timer,
   XCircle,
-  Calendar
+  Calendar,
+  Trophy,
+  Medal
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -197,7 +199,7 @@ const LoginPage = ({ onLogin }: { onLogin: (user: any) => void }) => {
 
 // 2. Admin Dashboard
 const AdminDashboard = ({ user, onLogout }: { user: any; onLogout: () => void }) => {
-  const [activeTab, setActiveTab] = useState<'students' | 'transactions' | 'reports' | 'store' | 'settings' | 'quiz'>('students');
+  const [activeTab, setActiveTab] = useState<'students' | 'transactions' | 'reports' | 'store' | 'settings' | 'quiz' | 'ranking'>('students');
   const [students, setStudents] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   
@@ -494,6 +496,17 @@ const AdminDashboard = ({ user, onLogout }: { user: any; onLogout: () => void })
           >
             <TrendingUp size={20} />
             <span className="hidden lg:inline">Relatórios</span>
+          </button>
+          <button 
+            onClick={() => setActiveTab('ranking')}
+            className={cn(
+              "flex items-center justify-center lg:justify-start lg:gap-3 p-2.5 lg:px-4 lg:py-3 rounded-xl text-sm font-medium transition-all whitespace-nowrap lg:w-full",
+              activeTab === 'ranking' ? "bg-sky-500 text-white shadow-lg shadow-sky-100" : "text-slate-500 hover:bg-slate-50"
+            )}
+            title="Ranking"
+          >
+            <Medal size={20} />
+            <span className="hidden lg:inline">Ranking</span>
           </button>
           <button 
             onClick={() => setActiveTab('settings')}
@@ -827,6 +840,69 @@ const AdminDashboard = ({ user, onLogout }: { user: any; onLogout: () => void })
                 </div>
               </Card>
             </div>
+          )}
+
+          {activeTab === 'ranking' && (
+            <Card className="p-0 overflow-hidden">
+              <div className="p-6 border-b border-slate-100 bg-slate-50/50">
+                <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <Trophy className="text-amber-500" size={24} />
+                  Ranking de Desafios Bíblicos
+                </h3>
+                <p className="text-sm text-slate-500 mt-1">Classificação baseada no número de acertos nos desafios.</p>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50/50">
+                      <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Posição</th>
+                      <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Aluno</th>
+                      <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Acertos</th>
+                      <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Saldo</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {ranking.map((r, i) => (
+                      <tr key={r.id} className={cn(
+                        "hover:bg-slate-50/50 transition-colors",
+                        i === 0 ? "bg-amber-50/30" : i === 1 ? "bg-slate-50/30" : i === 2 ? "bg-amber-50/10" : ""
+                      )}>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            {i === 0 && <Trophy size={18} className="text-amber-400" fill="currentColor" />}
+                            {i === 1 && <Trophy size={18} className="text-slate-300" fill="currentColor" />}
+                            {i === 2 && <Trophy size={18} className="text-amber-600" fill="currentColor" />}
+                            {i > 2 && <span className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500">{i + 1}</span>}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-sky-100 border border-sky-200 overflow-hidden shrink-0">
+                              {r.avatar_url ? (
+                                <img src={r.avatar_url} alt={r.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-[10px] font-bold text-sky-600">
+                                  {r.name.charAt(0)}
+                                </div>
+                              )}
+                            </div>
+                            <span className="font-bold text-slate-700">{r.name}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <span className="px-3 py-1 rounded-full bg-sky-50 text-sky-600 font-bold text-sm">
+                            {r.correct_answers}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <Currency value={r.balance} className="text-sm" />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
           )}
           {activeTab === 'quiz' && (
             <div className="space-y-6">
@@ -1386,7 +1462,9 @@ const StudentDashboard = ({ user, onLogout }: { user: any; onLogout: () => void 
   const [activeTab, setActiveTab] = useState<'home' | 'store' | 'profile' | 'quiz'>('home');
   const [data, setData] = useState<any>(null);
   const [questions, setQuestions] = useState<any[]>([]);
+  const [ranking, setRanking] = useState<any[]>([]);
   const [activeQuestion, setActiveQuestion] = useState<any>(null);
+  const [isChallengeStarted, setIsChallengeStarted] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const [quizResult, setQuizResult] = useState<any>(null);
   const [quizLoading, setQuizLoading] = useState(false);
@@ -1411,12 +1489,14 @@ const StudentDashboard = ({ user, onLogout }: { user: any; onLogout: () => void 
     setLoading(true);
     setError("");
     try {
-      const [d, q] = await Promise.all([
+      const [d, q, r] = await Promise.all([
         api.getStudentDashboard(user.id),
-        api.getStudentQuestions(user.id)
+        api.getStudentQuestions(user.id),
+        api.getRanking(user.id)
       ]);
       setData(d);
       setQuestions(q);
+      setRanking(r);
     } catch (err: any) {
       console.error(err);
       setError(err.message || "Erro ao carregar dados");
@@ -1431,13 +1511,13 @@ const StudentDashboard = ({ user, onLogout }: { user: any; onLogout: () => void 
 
   useEffect(() => {
     let timer: any;
-    if (activeQuestion && timeLeft > 0 && !quizResult) {
+    if (activeQuestion && isChallengeStarted && timeLeft > 0 && !quizResult) {
       timer = setInterval(() => {
         setTimeLeft(prev => prev - 1);
       }, 1000);
     }
     return () => clearInterval(timer);
-  }, [activeQuestion, timeLeft, quizResult]);
+  }, [activeQuestion, isChallengeStarted, timeLeft, quizResult]);
 
   useEffect(() => {
     if (activeQuestion && timeLeft === 0 && !quizResult && !quizLoading) {
@@ -1449,6 +1529,7 @@ const StudentDashboard = ({ user, onLogout }: { user: any; onLogout: () => void 
     setActiveQuestion(q);
     setTimeLeft(q.time_limit);
     setQuizResult(null);
+    setIsChallengeStarted(false);
   };
 
   const handleAnswer = async (selectedIndex: number) => {
@@ -1628,17 +1709,31 @@ const StudentDashboard = ({ user, onLogout }: { user: any; onLogout: () => void 
           <div className="flex items-center gap-2 lg:gap-4 shrink-0">
             <div className="hidden sm:block text-right">
               <p className="text-[10px] font-bold text-sky-200 uppercase tracking-widest leading-none">{data?.user?.account_number}</p>
-              <p className="text-sm font-bold mt-1">{data?.user?.name || "Usuário"}</p>
+              <div className="flex items-center justify-end gap-2 mt-1">
+                {ranking && ranking.findIndex(r => Number(r.id) === Number(user.id)) === 0 && <Trophy size={16} className="text-amber-400 drop-shadow-sm" fill="currentColor" />}
+                {ranking && ranking.findIndex(r => Number(r.id) === Number(user.id)) === 1 && <Trophy size={16} className="text-slate-300 drop-shadow-sm" fill="currentColor" />}
+                {ranking && ranking.findIndex(r => Number(r.id) === Number(user.id)) === 2 && <Trophy size={16} className="text-amber-600 drop-shadow-sm" fill="currentColor" />}
+                <p className="text-sm font-bold">{data?.user?.name || "Usuário"}</p>
+              </div>
             </div>
-            <div 
-              className="w-10 h-10 rounded-full bg-white/20 border-2 border-white/30 overflow-hidden cursor-pointer"
-              onClick={() => setActiveTab('profile')}
-            >
-              {data?.user?.avatar_url ? (
-                <img src={data?.user?.avatar_url} alt={data?.user?.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center font-bold text-white">
-                  {data?.user?.name?.charAt(0) || "U"}
+            <div className="relative">
+              <div 
+                className="w-10 h-10 rounded-full bg-white/20 border-2 border-white/30 overflow-hidden cursor-pointer"
+                onClick={() => setActiveTab('profile')}
+              >
+                {data?.user?.avatar_url ? (
+                  <img src={data?.user?.avatar_url} alt={data?.user?.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center font-bold text-white">
+                    {data?.user?.name?.charAt(0) || "U"}
+                  </div>
+                )}
+              </div>
+              {ranking && ranking.findIndex(r => Number(r.id) === Number(user.id)) !== -1 && ranking.findIndex(r => Number(r.id) === Number(user.id)) < 3 && (
+                <div className="absolute -top-1 -right-1 bg-white rounded-full p-0.5 shadow-sm border border-slate-100">
+                  {ranking.findIndex(r => Number(r.id) === Number(user.id)) === 0 && <Trophy size={12} className="text-amber-400" fill="currentColor" />}
+                  {ranking.findIndex(r => Number(r.id) === Number(user.id)) === 1 && <Trophy size={12} className="text-slate-300" fill="currentColor" />}
+                  {ranking.findIndex(r => Number(r.id) === Number(user.id)) === 2 && <Trophy size={12} className="text-amber-600" fill="currentColor" />}
                 </div>
               )}
             </div>
@@ -1832,87 +1927,111 @@ const StudentDashboard = ({ user, onLogout }: { user: any; onLogout: () => void 
                 <span className="flex items-center gap-2 text-sm font-bold text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg">
                   <Coins size={16} /> Valendo {activeQuestion.reward_amount}
                 </span>
-                <span className={cn(
-                  "flex items-center gap-2 text-sm font-bold px-3 py-1.5 rounded-lg transition-colors",
-                  timeLeft <= 10 ? "bg-red-50 text-red-600 animate-pulse" : "bg-sky-50 text-sky-600"
-                )}>
-                  <Timer size={16} /> {timeLeft}s restantes
-                </span>
+                {isChallengeStarted && (
+                  <span className={cn(
+                    "flex items-center gap-2 text-sm font-bold px-3 py-1.5 rounded-lg transition-colors",
+                    timeLeft <= 10 ? "bg-red-50 text-red-600 animate-pulse" : "bg-sky-50 text-sky-600"
+                  )}>
+                    <Timer size={16} /> {timeLeft}s restantes
+                  </span>
+                )}
               </div>
 
-              <h3 className="text-xl lg:text-2xl font-black text-slate-900 mb-8 text-center leading-snug">
-                {activeQuestion.question}
-              </h3>
+              {!isChallengeStarted ? (
+                <div className="text-center py-6 lg:py-10">
+                  <div className="w-20 h-20 bg-sky-50 text-sky-500 rounded-3xl flex items-center justify-center mx-auto mb-6 rotate-12 group-hover:rotate-0 transition-transform">
+                    <Gamepad2 size={40} />
+                  </div>
+                  <h3 className="text-2xl font-black text-slate-900 mb-2">Desafio Pronto! 🚀</h3>
+                  <p className="text-slate-500 mb-8 max-w-xs mx-auto">
+                    Você terá <span className="text-sky-600 font-bold">{activeQuestion.time_limit} segundos</span> para responder após aceitar.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <Button variant="ghost" className="flex-1 order-2 sm:order-1" onClick={() => setActiveQuestion(null)}>
+                      Voltar
+                    </Button>
+                    <Button className="flex-1 order-1 sm:order-2 shadow-lg shadow-sky-200" onClick={() => setIsChallengeStarted(true)}>
+                      Aceitar e Ver Pergunta
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <h3 className="text-xl lg:text-2xl font-black text-slate-900 mb-8 text-center leading-snug">
+                    {activeQuestion.question}
+                  </h3>
 
-              <div className="space-y-3">
-                {JSON.parse(activeQuestion.options).map((opt: string, idx: number) => {
-                  let btnClass = "bg-slate-50 border-2 border-slate-100 text-slate-700 hover:bg-sky-50 hover:border-sky-200";
-                  
-                  if (quizResult) {
-                    if (idx === quizResult.correctIndex) {
-                      btnClass = "bg-emerald-50 border-2 border-emerald-500 text-emerald-700";
-                    } else if (idx === quizResult.selectedIndex) {
-                      btnClass = "bg-red-50 border-2 border-red-500 text-red-700";
-                    } else {
-                      btnClass = "bg-slate-50 border-2 border-slate-100 text-slate-400 opacity-50";
-                    }
-                  }
+                  <div className="space-y-3">
+                    {JSON.parse(activeQuestion.options).map((opt: string, idx: number) => {
+                      let btnClass = "bg-slate-50 border-2 border-slate-100 text-slate-700 hover:bg-sky-50 hover:border-sky-200";
+                      
+                      if (quizResult) {
+                        if (idx === quizResult.correctIndex) {
+                          btnClass = "bg-emerald-50 border-2 border-emerald-500 text-emerald-700";
+                        } else if (idx === quizResult.selectedIndex) {
+                          btnClass = "bg-red-50 border-2 border-red-500 text-red-700";
+                        } else {
+                          btnClass = "bg-slate-50 border-2 border-slate-100 text-slate-400 opacity-50";
+                        }
+                      }
 
-                  return (
-                    <button
-                      key={idx}
-                      disabled={!!quizResult || quizLoading}
-                      onClick={() => handleAnswer(idx)}
-                      className={cn(
-                        "w-full p-4 rounded-xl text-left font-medium transition-all",
-                        btnClass
-                      )}
+                      return (
+                        <button
+                          key={idx}
+                          disabled={!!quizResult || quizLoading}
+                          onClick={() => handleAnswer(idx)}
+                          className={cn(
+                            "w-full p-4 rounded-xl text-left font-medium transition-all",
+                            btnClass
+                          )}
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className={cn(
+                              "w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm shrink-0",
+                              quizResult 
+                                ? (idx === quizResult.correctIndex ? "bg-emerald-200 text-emerald-800" : idx === quizResult.selectedIndex ? "bg-red-200 text-red-800" : "bg-slate-200 text-slate-500")
+                                : "bg-white text-slate-500 shadow-sm"
+                            )}>
+                              {String.fromCharCode(65 + idx)}
+                            </span>
+                            <span>{opt}</span>
+                            
+                            {quizResult && idx === quizResult.correctIndex && <CheckCircle2 className="ml-auto text-emerald-500" size={20} />}
+                            {quizResult && idx === quizResult.selectedIndex && idx !== quizResult.correctIndex && <XCircle className="ml-auto text-red-500" size={20} />}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {quizResult && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                      className="mt-8 text-center"
                     >
-                      <div className="flex items-center gap-3">
-                        <span className={cn(
-                          "w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm shrink-0",
-                          quizResult 
-                            ? (idx === quizResult.correctIndex ? "bg-emerald-200 text-emerald-800" : idx === quizResult.selectedIndex ? "bg-red-200 text-red-800" : "bg-slate-200 text-slate-500")
-                            : "bg-white text-slate-500 shadow-sm"
-                        )}>
-                          {String.fromCharCode(65 + idx)}
-                        </span>
-                        <span>{opt}</span>
-                        
-                        {quizResult && idx === quizResult.correctIndex && <CheckCircle2 className="ml-auto text-emerald-500" size={20} />}
-                        {quizResult && idx === quizResult.selectedIndex && idx !== quizResult.correctIndex && <XCircle className="ml-auto text-red-500" size={20} />}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {quizResult && (
-                <motion.div 
-                  initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                  className="mt-8 text-center"
-                >
-                  {quizResult.isCorrect ? (
-                    <div className="bg-emerald-50 text-emerald-700 p-4 rounded-xl mb-6">
-                      <h4 className="font-black text-lg mb-1 flex items-center justify-center gap-2">
-                        <CheckCircle2 size={24} /> Resposta Certa! 🎉
-                      </h4>
-                      <p className="font-medium">Você ganhou {quizResult.earnedAmount} moedas.</p>
-                    </div>
-                  ) : (
-                    <div className="bg-red-50 text-red-700 p-4 rounded-xl mb-6">
-                      <h4 className="font-black text-lg mb-1 flex items-center justify-center gap-2">
-                        <XCircle size={24} /> Que pena!
-                      </h4>
-                      <p className="font-medium">
-                        {quizResult.selectedIndex === -1 ? "O tempo acabou!" : "A resposta estava incorreta."}
-                      </p>
-                    </div>
+                      {quizResult.isCorrect ? (
+                        <div className="bg-emerald-50 text-emerald-700 p-4 rounded-xl mb-6">
+                          <h4 className="font-black text-lg mb-1 flex items-center justify-center gap-2">
+                            <CheckCircle2 size={24} /> Resposta Certa! 🎉
+                          </h4>
+                          <p className="font-medium">Você ganhou {quizResult.earnedAmount} moedas.</p>
+                        </div>
+                      ) : (
+                        <div className="bg-red-50 text-red-700 p-4 rounded-xl mb-6">
+                          <h4 className="font-black text-lg mb-1 flex items-center justify-center gap-2">
+                            <XCircle size={24} /> Que pena!
+                          </h4>
+                          <p className="font-medium">
+                            {quizResult.selectedIndex === -1 ? "O tempo acabou!" : "A resposta estava incorreta."}
+                          </p>
+                        </div>
+                      )}
+                      <Button onClick={() => setActiveQuestion(null)} className="w-full">
+                        Voltar aos Desafios
+                      </Button>
+                    </motion.div>
                   )}
-                  <Button onClick={() => setActiveQuestion(null)} className="w-full">
-                    Voltar aos Desafios
-                  </Button>
-                </motion.div>
+                </>
               )}
             </Card>
           ) : (
@@ -1927,7 +2046,8 @@ const StudentDashboard = ({ user, onLogout }: { user: any; onLogout: () => void 
                       <Coins size={12} /> +{q.reward_amount}
                     </span>
                   </div>
-                  <h3 className="font-bold text-slate-900 mb-2 line-clamp-2">{q.question}</h3>
+                  <h3 className="font-bold text-slate-900 mb-1 line-clamp-1">Desafio Bíblico</h3>
+                  <p className="text-xs text-slate-500 italic mb-2">Revelar pergunta ao iniciar</p>
                   {q.expires_at && (
                     <div className="mb-2">
                       <span className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md uppercase tracking-wider">
@@ -2059,7 +2179,12 @@ const StudentDashboard = ({ user, onLogout }: { user: any; onLogout: () => void 
                   onChange={handleAvatarUpload} 
                 />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mt-6">{data?.user?.name || "Usuário"}</h3>
+              <div className="flex items-center justify-center gap-2 mt-6">
+                {ranking && ranking.findIndex(r => Number(r.id) === Number(user.id)) === 0 && <Trophy size={24} className="text-amber-400 drop-shadow-sm" fill="currentColor" />}
+                {ranking && ranking.findIndex(r => Number(r.id) === Number(user.id)) === 1 && <Trophy size={24} className="text-slate-300 drop-shadow-sm" fill="currentColor" />}
+                {ranking && ranking.findIndex(r => Number(r.id) === Number(user.id)) === 2 && <Trophy size={24} className="text-amber-600 drop-shadow-sm" fill="currentColor" />}
+                <h3 className="text-xl font-bold text-slate-900">{data?.user?.name || "Usuário"}</h3>
+              </div>
               <p className="text-slate-400 font-bold text-xs uppercase tracking-widest mt-1">Conta: {data?.user?.account_number}</p>
               
               <div className="mt-8 w-full space-y-3">

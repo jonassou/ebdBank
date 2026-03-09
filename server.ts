@@ -534,8 +534,15 @@ async function startServer() {
   });
 
   // Reports
-  app.get("/api/admin/reports/ranking", auth, adminOnly, (req, res) => {
-    const ranking = db.prepare("SELECT name, balance FROM users WHERE role = 'student' ORDER BY balance DESC LIMIT 10").all();
+  app.get("/api/admin/reports/ranking", auth, (req, res) => {
+    const ranking = db.prepare(`
+      SELECT u.id, u.name, u.avatar_url, u.balance, COUNT(qa.id) as correct_answers
+      FROM users u
+      LEFT JOIN quiz_attempts qa ON u.id = qa.user_id AND qa.is_correct = 1
+      WHERE u.role = 'student'
+      GROUP BY u.id
+      ORDER BY correct_answers DESC, u.balance DESC, u.name ASC
+    `).all();
     res.json(ranking);
   });
 
